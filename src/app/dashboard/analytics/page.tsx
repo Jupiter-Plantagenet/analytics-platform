@@ -5,31 +5,12 @@ import {
   RevenueChart,
   UserGrowthChart,
 } from "@/components/DashboardChart";
-
-interface RevenueData {
-  month: string;
-  revenue: number;
-  target: number;
-}
-
-interface UserData {
-  month: string;
-  users: number;
-  newUsers: number;
-}
-
-interface Activity {
-  id: string;
-  type: string;
-  name: string;
-  value: number;
-  timestamp: string;
-}
+import type { RevenueChartData, UserGrowthData, ActivityEntry } from "@/types";
 
 export default function AnalyticsPage() {
-  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
-  const [userData, setUserData] = useState<UserData[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [revenueData, setRevenueData] = useState<RevenueChartData[]>([]);
+  const [userData, setUserData] = useState<UserGrowthData[]>([]);
+  const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
