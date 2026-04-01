@@ -26,7 +26,7 @@ export async function verifyPassword(
 
 export function generateToken(payload: JWTPayload): AuthTokens {
   const accessToken = jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRATION,
+    expiresIn: JWT_EXPIRATION as jwt.SignOptions["expiresIn"],
     issuer: "analytics-platform",
     audience: "analytics-platform-api",
   });
