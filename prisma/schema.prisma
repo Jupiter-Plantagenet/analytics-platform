@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Multi-Tenant Core ──────────────────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      Plan     @default(FREE)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users           User[]
+  analyticsEvents AnalyticsEvent[]
+  metrics         Metric[]
+
+  @@map("tenants")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String
+  hashedPassword String   @map("hashed_password")
+  name           String
+  role           Role     @default(VIEWER)
+  isActive       Boolean  @default(true) @map("is_active")
+  lastLoginAt    DateTime? @map("last_login_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([email, tenantId])
+  @@index([tenantId])
+  @@index([email])
+  @@map("users")
+}
+
+// ─── Analytics Data ─────────────────────────────────────────────────────────
+
+model AnalyticsEvent {
+  id        String    @id @default(cuid())
+  type      EventType
+  name      String
+  value     Float     @default(0)
+  metadata  Json?
+  timestamp DateTime  @default(now())
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, type])
+  @@index([tenantId, timestamp])
+  @@index([timestamp])
+  @@map("analytics_events")
+}
+
+model Metric {
+  id        String     @id @default(cuid())
+  name      String
+  category  MetricCategory
+  value     Float
+  unit      String     @default("")
+  period    String                  // e.g., "2024-01", "2024-Q1", "2024-W03"
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  tenantId String @map("tenant_id")
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name, period])
+  @@index([tenantId, category])
+  @@index([tenantId, period])
+  @@map("metrics")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  MANAGER
+  VIEWER
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum EventType {
+  PAGE_VIEW
+  CLICK
+  CONVERSION
+  SIGNUP
+  PURCHASE
+  API_CALL
+  ERROR
+  CUSTOM
+}
+
+enum MetricCategory {
+  REVENUE
+  USERS
+  ENGAGEMENT
+  PERFORMANCE
+  CONVERSION
+}
