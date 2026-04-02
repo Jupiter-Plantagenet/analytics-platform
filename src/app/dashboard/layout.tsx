@@ -77,12 +77,35 @@ export default function DashboardLayout({
           <TenantSelector
             tenants={DEMO_TENANTS}
             currentTenantId={DEMO_TENANTS.find((t) => t.slug === user.tenantSlug)?.id ?? DEMO_TENANTS[0].id}
-            onSelect={(id) => {
+            onSelect={async (id) => {
               const tenant = DEMO_TENANTS.find((t) => t.id === id);
-              if (tenant) {
-                // In production this would re-authenticate with the new tenant
-                console.log("Switched to tenant:", tenant.slug);
-              }
+              if (!tenant || tenant.slug === user.tenantSlug) return;
+
+              // Re-authenticate with the new tenant using same role
+              const email = `${user.role.toLowerCase()}@${tenant.slug}.com`;
+              try {
+                const res = await fetch("/api/auth", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    email,
+                    password: "demo-password-123",
+                    tenantSlug: tenant.slug,
+                    action: "login",
+                  }),
+                });
+                const data = await res.json();
+                if (data.success) {
+                  localStorage.setItem("token", data.data.accessToken);
+                  localStorage.setItem("tokenExpiry", String(data.data.expiresAt));
+                  try {
+                    const payload = JSON.parse(atob(data.data.accessToken.split(".")[1]));
+                    localStorage.setItem("userRole", payload.role || "");
+                    localStorage.setItem("tenantSlug", payload.tenantSlug || "");
+                  } catch {}
+                  window.location.reload();
+                }
+              } catch {}
             }}
           />
 

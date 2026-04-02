@@ -32,6 +32,8 @@ export default function UsersPage() {
       .then((res) => {
         if (res.success && Array.isArray(res.data)) {
           setUsers(res.data);
+        } else if (res.error === "Insufficient permissions") {
+          setError("You don't have permission to view users. Admin or Manager role required.");
         } else {
           setError(res.error || "Failed to load users");
         }
