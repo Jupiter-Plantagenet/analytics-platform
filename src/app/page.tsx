@@ -50,6 +50,14 @@ export default function LandingPage() {
       // Store token (in production, use httpOnly cookies instead)
       localStorage.setItem("token", data.data.accessToken);
       localStorage.setItem("tokenExpiry", String(data.data.expiresAt));
+
+      // Decode JWT payload to store role for UI display
+      try {
+        const payload = JSON.parse(atob(data.data.accessToken.split(".")[1]));
+        localStorage.setItem("userRole", payload.role || "");
+        localStorage.setItem("tenantSlug", payload.tenantSlug || "");
+      } catch {}
+
       router.push("/dashboard");
     } catch {
       setError("Network error. Please try again.");
